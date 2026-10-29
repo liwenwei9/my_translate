@@ -10,7 +10,7 @@ const startupCopy: Record<StartupLanguage, {waiting: string; failed: string; pre
   en: {waiting: 'Still loading your settings…', failed: 'Could not open My Translate', preferences: 'Saved preferences are preserved. Reopen to try again.', reopen: 'Reopen'},
   ja: {waiting: '設定を読み込んでいます…', failed: 'My Translateを開けませんでした', preferences: '保存した設定は保持されています。開き直して再試行してください。', reopen: '開き直す'},
   ko: {waiting: '설정을 불러오는 중…', failed: 'My Translate를 열 수 없습니다', preferences: '저장한 설정은 유지됩니다. 다시 열어 시도하세요.', reopen: '다시 열기'},
-  fr: {waiting: 'Chargement de vos paramètres…', failed: 'Impossible d’ouvrir FluentRead', preferences: 'Vos préférences sont conservées. Rouvrez pour réessayer.', reopen: 'Rouvrir'},
+  fr: {waiting: 'Chargement de vos paramètres…', failed: 'Impossible d’ouvrir My Translate', preferences: 'Vos préférences sont conservées. Rouvrez pour réessayer.', reopen: 'Rouvrir'},
   ru: {waiting: 'Загружаем настройки…', failed: 'Не удалось открыть My Translate', preferences: 'Сохранённые настройки не изменились. Откройте снова, чтобы повторить попытку.', reopen: 'Открыть снова'},
   es: {waiting: 'Cargando tu configuración…', failed: 'No se pudo abrir My Translate', preferences: 'Tus preferencias se conservan. Vuelve a abrir para reintentarlo.', reopen: 'Volver a abrir'},
 };
