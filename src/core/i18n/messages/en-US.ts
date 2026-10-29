@@ -1070,7 +1070,7 @@ export const enUSMessages = {
     'language.help': 'Changes apply immediately.',
     ...onboardingEnglishMessages,
     'language.changed': 'Interface language changed',
-    'language.onboardingWelcomeTitle': 'Welcome to FluentRead',
+    'language.onboardingWelcomeTitle': 'Welcome to My Translate',
     'language.onboardingWelcomeDescription': 'A calmer way to read more of the web. Choose your interface language to get started.',
     'language.onboardingEyebrow': 'One last step',
     'language.onboardingDescription': 'Choose the language used by FluentRead.',
