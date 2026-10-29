@@ -1,6 +1,6 @@
 {
   "name": "my_translate",
-  "description": "Browser translation extension based on FluentRead - translate web pages, selected text with multiple translation services.",
+  "description": "Read web pages in two languages, translate selected text, and choose from multiple translation services.",
   "private": true,
   "version": "0.0.40",
   "userscriptVersion": "2.0.2",

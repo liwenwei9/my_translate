@@ -701,7 +701,7 @@ export class Config {
         this.sectionTranslationHotkey = DEFAULT_SECTION_TRANSLATION_HOTKEY; // 默认 Alt+R，开启后才监听
         this.customSectionTranslationHotkey = ''; // 自定义局部翻译快捷键为空
         this.sectionTranslationRules = []; // 不自动记住网页区域，只有用户明确保存才建立规则
-        this.disableSelectionTranslator = true; // 默认关闭划词翻译
+        this.disableSelectionTranslator = false; // 默认开启划词翻译以便冷启动演示
         this.selectionAreaEnabled = true; // 默认开启，按快捷键圈选后才截图翻译
         this.selectionAreaHotkey = DEFAULT_AREA_TRANSLATION_HOTKEY; // 默认 Shift+Z，可改为其他预设或自定义组合键
         this.customSelectionAreaHotkey = ''; // 自定义圈选快捷键为空
@@ -727,7 +727,7 @@ export class Config {
         this.myMemoryEmail = '';
         this.deeplApiPlan = DEFAULT_DEEPL_API_PLAN; // 兼容既有 DeepL API Free 默认端点
         this.deeplx = defaultOption.deeplx; // DeepLX 默认服务地址
-        this.selectionTranslatorMode = 'disabled'; // 默认关闭划词翻译
+        this.selectionTranslatorMode = 'bilingual'; // 默认开启双语划词翻译
         this.selectionTranslatorModeBeforeDisable = 'bilingual';
         this.selectionTranslatorPresentation = 'card';
         this.selectionTranslatorTrigger = 'icon'; // 默认显示可发现的操作图标
@@ -737,7 +737,7 @@ export class Config {
         this.selectionClickSelectHotkey = DEFAULT_CLICK_SELECTION_HOTKEY;
         this.selectionTranslatorDelay = DEFAULT_SELECTION_TRANSLATOR_DELAY;
         this.selectionTranslatorAutoDismiss = true;
-        this.selectionTranslatorBidirectional = false; // 保留默认的同语言跳过，用户可按需开启双向入口
+        this.selectionTranslatorBidirectional = true; // 默认开启双向翻译，支持中英互译演示
         this.selectionTtsVoices = []; // 默认按当前语言使用内置音色回退顺序
         this.selectionTtsMode = DEFAULT_LOCAL_TTS_MODE;
         this.selectionTtsLocalVoice = DEFAULT_LOCAL_TTS_VOICE;

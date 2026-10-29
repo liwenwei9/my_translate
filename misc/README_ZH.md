@@ -1,121 +1,173 @@
 <div align="center">
 
-<img src="../assets/brand/icon-512.png" alt="流畅阅读" width="96" />
-
-# 流畅阅读
+# My Translate
 
 **让语言更近，让世界更大。**
 
-一款开源的浏览器双语翻译插件。
+基于 [FluentRead](https://github.com/Bistutu/FluentRead) 的开源浏览器翻译扩展。
 
-[安装](#安装) · [官网](https://read.thinkstu.com/) · [使用指南](https://read.thinkstu.com/guide/) · [赞助合作](#企业与项目赞助) · [隐私政策](https://read.thinkstu.com/guide/privacy) · [English](../README.md) · [LINUX DO 社区](https://linux.do) · [GPL-3.0](../LICENSE)
-
-</div>
-
-流畅阅读支持在原网页中对照阅读原文与译文，并提供划词翻译、AI 阅读辅助、图片翻译、文档翻译和视频双语字幕。翻译卡片支持结合上下文解释选中文字并连续追问。
-
-<div align="center">
-
-[![流畅阅读介绍视频](../docs/public/videos/fluentread-promo-zh-poster.webp)](https://read.thinkstu.com/videos/fluentread-promo-zh.mp4)
-
-[▶ 观看 56 秒介绍视频](https://read.thinkstu.com/videos/fluentread-promo-zh.mp4)
-
-想进一步了解流畅阅读，可以[观看完整官方介绍片（4 分多钟 · B 站）](https://www.bilibili.com/video/BV1qhHJ6uEiF/)。
+[快速开始](#安装和使用) · [功能特性](#功能特性) · [许可证](#许可证) · [English](../README.md)
 
 </div>
 
-[![流畅阅读网页双语对照效果](../docs/public/screenshots/translation.webp)](../docs/public/screenshots/translation.webp)
+My Translate 是一个基于 FluentRead 开发的开源浏览器翻译扩展。它支持网页翻译、划词翻译、输入翻译等多种翻译模式，并配置了 Microsoft、Google、DeepLX 等免费翻译引擎，无需 API Key 即可使用。
 
-## 主要功能
+## 功能特性
 
-| 功能 | 说明 |
-| --- | --- |
-| 网页翻译 | 全文双语对照、悬浮翻译与划词翻译，支持恢复原文和网站自动翻译规则。 |
-| AI 翻译卡片 | 解释含义、分析句子、说明用法与生成练习，支持上下文参考和连续追问。 |
-| 学习中心 | 收藏单词、短语和句子，保留原文语境，支持学习与复习。 |
-| 图片与圈选翻译 | 识别网页图片或选定区域中的文字，并显示可复制的译文。 |
-| 文档翻译 | 支持 PDF、ePub、DOCX 等格式，提供双语阅读、译文校订与文件导出。 |
-| 视频字幕 | 支持 YouTube 和 X 双语字幕；部分 X 视频可通过本地模型生成 AI 字幕。 |
-| 翻译服务与设置 | 支持免费翻译服务、DeepL、AI 服务和本地 Ollama，可配置术语库、译文样式、快捷键及菜单栏布局。 |
+- 📄 **网页翻译**：双语对照显示
+- ✏️ **划词翻译**：选中文本即时翻译
+- 🔤 **输入翻译**：在翻译中心输入文本进行翻译
+- 🌐 **中英互译**：支持中文↔英文翻译
+- 🆓 **免费引擎**：支持 Microsoft、Google、DeepLX 等免费翻译服务
 
-各功能的使用方法与支持范围见[使用指南](https://read.thinkstu.com/guide/)。AI 讲解需要配置可用的 AI 服务；第三方服务的费用与可用性由服务商决定。
+## 安装和使用
 
-## 安装
+### 1. 安装依赖
 
-[Chrome](https://chromewebstore.google.com/detail/djnlaiohfaaifbibleebjggkghlmcpcj) · [Edge](https://microsoftedge.microsoft.com/addons/detail/kakgmllfpjldjhcnkghpplmlbnmcoflp) · [Firefox](https://addons.mozilla.org/zh-CN/firefox/addon/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/) · [油猴脚本](https://greasyfork.org/zh-CN/scripts/482986)
+需要 Node.js 20 或更高版本和 pnpm 9。
 
-1. 安装扩展并刷新需要翻译的网页。
-2. 打开流畅阅读，选择目标语言。源语言默认为自动检测，也可手动指定。
-3. 点击“翻译页面”。划词翻译及其他功能可在设置中开启。
-
-各浏览器商店的版本更新可能存在时间差。油猴脚本提供核心网页翻译能力；完整支持范围见[安装指南](https://read.thinkstu.com/guide/getting-started)。
-
-## 企业与项目赞助
-
-项目目前主要由个人支持，每月为开源开发投入数万美元的 API Token 费用。我们相信，流畅阅读能为世界带来更多美好。
-
-<a href="mailto:a1914493943@gmail.com?subject=FluentRead%20sponsorship"><img src="../docs/public/support/sponsor-placeholder-zh.svg" width="480" height="128" alt="虚位以待，成为流畅阅读赞助伙伴" /></a>
-
-[邮件联系](mailto:a1914493943@gmail.com?subject=FluentRead%20sponsorship) · [添加微信](https://read.thinkstu.com/support/wechat-contact.jpg)
-
-## 本地开发
-
-环境要求：Node.js 20 或以上、pnpm 9。
-
-```sh
+```bash
 pnpm install --frozen-lockfile
+```
+
+### 2. 构建扩展
+
+```bash
+pnpm build
+```
+
+构建完成后，产物位于 `.output/chrome-mv3` 目录。
+
+### 3. 加载到浏览器
+
+#### Chrome / Edge / 其他 Chromium 浏览器
+
+1. 打开浏览器，访问 `chrome://extensions/`（Edge 访问 `edge://extensions/`）
+2. 开启右上角的"开发者模式"
+3. 点击"加载已解压的扩展程序"
+4. 选择项目中的 `.output/chrome-mv3` 目录
+5. 扩展加载成功后，图标会出现在浏览器工具栏
+
+### 4. 测试翻译功能
+
+#### 方法一：使用测试页面
+
+1. 在浏览器中打开项目中的 `test.html` 文件
+2. 选中页面中的中文或英文文本
+3. 会自动弹出翻译浮窗，显示译文
+
+#### 方法二：翻译任意网页
+
+1. 访问任意包含英文或中文内容的网页
+2. 点击扩展图标打开设置面板
+3. 选择目标语言（中文或英文）
+4. 点击"翻译页面"进行双语翻译
+5. 或直接选中文本进行划词翻译
+
+#### 方法三：翻译中心
+
+1. 点击扩展图标
+2. 选择"翻译中心"选项
+3. 在输入框中输入或粘贴要翻译的文本
+4. 选择源语言和目标语言
+5. 点击"开始翻译"查看结果
+
+## 功能测试清单
+
+测试前请确保：
+- ✅ 扩展已成功加载到浏览器
+- ✅ 扩展图标显示在工具栏中
+- ✅ 已打开测试页面或任意网页
+
+### 核心功能验证
+
+- [ ] **划词翻译**：选中英文文本 → 显示中文译文
+- [ ] **划词翻译**：选中中文文本 → 显示英文译文
+- [ ] **复制译文**：点击翻译浮窗中的复制按钮 → 译文已复制到剪贴板
+- [ ] **输入翻译**：在翻译中心输入文本 → 显示译文
+- [ ] **网页翻译**：点击"翻译页面" → 页面显示双语对照
+
+### 免费引擎验证
+
+确认以下至少一个引擎可正常工作（无需 API Key）：
+- [ ] Microsoft Translator
+- [ ] Google Translate
+- [ ] DeepLX
+
+## 开发说明
+
+### 开发模式
+
+```bash
 pnpm dev
 ```
 
-`pnpm build` 构建 Chrome 扩展，`pnpm compile` 执行类型检查，`pnpm docs:build` 构建官网。架构与测试约定见[架构说明](../docs/architecture.md)和[测试说明](../docs/testing.md)。
+在开发模式下，修改代码后会自动重新构建。
 
-## 贡献与反馈
+### 项目结构
 
-欢迎通过 [Issue](https://github.com/FluentRead/FluentRead/issues) 报告问题或提出建议，并通过 Pull Request 改进代码、文档、界面翻译及[网站适配](../docs/contributing/site-adaptation.md)。
+```
+.
+├── src/                    # 源代码
+│   ├── app/               # 应用逻辑
+│   ├── core/              # 核心功能
+│   ├── features/          # 功能模块
+│   ├── providers/         # 翻译服务提供商
+│   └── ui/                # 用户界面
+├── entrypoints/           # 扩展入口点
+├── public/                # 静态资源
+├── .output/               # 构建产物
+└── test.html              # 测试页面
+```
 
-## 设计系统
+### 翻译引擎
 
-运行 `pnpm storybook` 可在本地查看真实 Vue 组件、界面皮肤与交互状态。详见[设计系统与组件预览](../docs/guide/design-system.md)。使用 `pnpm docs:build:site` 可一起构建文档与组件展示站。
+本项目使用 FluentRead 的免费翻译引擎：
 
-## 支持项目
+- **Microsoft Translator**：`src/providers/translation/microsoft.ts`
+- **Google Translate**：`src/providers/translation/google.ts`
+- **DeepLX**：`src/providers/translation/deeplx.ts`
 
-流畅阅读是一个开源项目，其持续开发离不开社区的慷慨支持。可以通过微信赞赏或 Ko-fi 自愿赞赏。
+这些引擎无需配置 API Key 即可使用。
 
-<table>
-<tr><th>微信赞赏</th><th>Ko-fi · 国际支持</th></tr>
-<tr>
-<td align="center"><a href="./approve.jpg"><img src="./approve.jpg" width="220" alt="Thinkstu 的微信赞赏码" /></a><br />使用微信扫码，点击图片可查看原图。</td>
-<td align="center"><a href="https://ko-fi.com/thinkstu"><strong>通过 Ko-fi 支持 thinkstu ↗</strong></a><br /><br />ko-fi.com/thinkstu</td>
-</tr>
-</table>
+## 许可证
+
+本项目基于 [FluentRead](https://github.com/Bistutu/FluentRead) 开发，遵循 GPL-3.0 许可证。
+
+- 原项目：FluentRead (https://github.com/Bistutu/FluentRead)
+- 许可证：GNU General Public License v3.0
+- 详见：[LICENSE](../LICENSE) 和 [NOTICE.md](../NOTICE.md)
 
 ## 致谢
 
-流畅阅读的成长离不开开源社区。感谢以下项目及其贡献者的开放与分享：
+感谢 FluentRead 项目及其贡献者创建并维护这个优秀的开源翻译扩展。My Translate 的所有功能都基于 FluentRead 的出色工作。
 
-- [陪读蛙](https://github.com/mengxi-ream/read-frog)
-- [简约翻译](https://github.com/fishjar/kiss-translator)
-- [Duo Translator](https://github.com/linuxscreen/duo-translator)
-- [InfoLens](https://github.com/dqy08/InfoLens) —— 智能高亮的设计参考了它的意外度热力图思路（Apache-2.0）
+## 常见问题
 
-<!-- contributors:start -->
-<a href="https://github.com/FluentRead/FluentRead/graphs/contributors">
-  <table>
-    <tr>
-      <th>
-        <br>
-        <img src="https://avatars.githubusercontent.com/u/91378285?s=96&v=4" width="48" height="48" alt="Bistutu"><img src="https://avatars.githubusercontent.com/u/67351121?s=96&v=4" width="48" height="48" alt="WindChimeEcho"><img src="https://avatars.githubusercontent.com/u/15028142?s=96&v=4" width="48" height="48" alt="df123"><img src="https://avatars.githubusercontent.com/u/106456682?s=96&v=4" width="48" height="48" alt="RayySummers"><img src="https://avatars.githubusercontent.com/u/360470?s=96&v=4" width="48" height="48" alt="hewigovens"><img src="https://avatars.githubusercontent.com/u/10784701?s=96&v=4" width="48" height="48" alt="memwey"><img src="https://avatars.githubusercontent.com/u/6224049?s=96&v=4" width="48" height="48" alt="zhitiao"><img src="https://avatars.githubusercontent.com/u/27531296?s=96&v=4" width="48" height="48" alt="Meursau1T"><img src="https://avatars.githubusercontent.com/u/45133544?s=96&v=4" width="48" height="48" alt="520250"><img src="https://avatars.githubusercontent.com/u/104964583?s=96&v=4" width="48" height="48" alt="lemonteaau"><img src="https://avatars.githubusercontent.com/u/61247483?s=96&v=4" width="48" height="48" alt="Calcium-Ion"><img src="https://avatars.githubusercontent.com/u/555720?s=96&v=4" width="48" height="48" alt="pluwen"><img src="https://avatars.githubusercontent.com/u/30524126?s=96&v=4" width="48" height="48" alt="z0gSh1u"><img src="https://avatars.githubusercontent.com/u/78135443?s=96&v=4" width="48" height="48" alt="LIBai11"><img src="https://avatars.githubusercontent.com/u/3325888?s=96&v=4" width="48" height="48" alt="faintbear"><img src="https://avatars.githubusercontent.com/u/31530787?s=96&v=4" width="48" height="48" alt="damingsu"><img src="https://avatars.githubusercontent.com/u/86344183?s=96&v=4" width="48" height="48" alt="LinmonK"><img src="https://avatars.githubusercontent.com/u/113257654?s=96&v=4" width="48" height="48" alt="Alkacid"><img src="https://avatars.githubusercontent.com/u/10754850?s=96&v=4" width="48" height="48" alt="yolo2h"><img src="https://avatars.githubusercontent.com/u/253238660?s=96&v=4" width="48" height="48" alt="SyrupyTasty"><img src="https://avatars.githubusercontent.com/u/57394205?s=96&v=4" width="48" height="48" alt="NaCodermer"><img src="https://avatars.githubusercontent.com/u/57748455?s=96&v=4" width="48" height="48" alt="MrWangJustToDo"><img src="https://avatars.githubusercontent.com/u/19755727?s=96&v=4" width="48" height="48" alt="hu3rror"><img src="https://avatars.githubusercontent.com/u/73932916?s=96&v=4" width="48" height="48" alt="BalconyJH"><br>
-        <br>
-      </th>
-    </tr>
-  </table>
-</a>
-<!-- contributors:end -->
+### Q: 翻译功能无法使用怎么办？
 
-感谢每一位为流畅阅读做出贡献的朋友，包括许多未能在此一一列出的人；也感谢每一位用户包容这个仍不完美的产品。希望与你们一起，为这个世界带来更多美好。
+A: 请检查：
+1. 扩展是否正确加载（在 chrome://extensions/ 中查看）
+2. 网络连接是否正常
+3. 尝试刷新页面后再次使用
 
-## 许可证与隐私
+### Q: 支持哪些浏览器？
 
-流畅阅读按 [GPL-3.0](../LICENSE) 开源发布，第三方组件的来源与许可见[第三方声明](../public/third-party-notices/)。
+A: 支持所有基于 Chromium 的浏览器：
+- Google Chrome
+- Microsoft Edge
+- Brave
+- Vivaldi
+- 其他 Chromium 内核浏览器
 
-设置和学习记录默认保存在本机，云端翻译由所选服务处理。Google Drive 配置同步（Chrome 测试功能）可将完整配置（含服务凭据）备份到自己的云盘，不包含单词本、聊天记录和用量统计。权限、加密及删除方式见[隐私政策](https://read.thinkstu.com/guide/privacy)。
+### Q: 如何切换翻译引擎？
+
+A: 点击扩展图标 → 设置 → 翻译服务，选择想要使用的翻译引擎。
+
+### Q: 是否需要 API Key？
+
+A: 不需要。本项目配置的 Microsoft、Google 等引擎都是免费的，无需申请 API Key。
+
+## 问题反馈
+
+如有问题或建议，请在 GitHub Issues 中提交。

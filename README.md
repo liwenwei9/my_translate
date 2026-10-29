@@ -1,8 +1,16 @@
+<div align="center">
+
 # My Translate
 
-A browser translation extension based on [FluentRead](https://github.com/Bistutu/FluentRead) (GPL-3.0)
+**Closer languages. A bigger world.**
 
-**[中文文档 / Chinese Documentation](./README.zh-CN.md)** ← 点击查看完整中文说明
+An open-source browser extension for bilingual translation, based on [FluentRead](https://github.com/Bistutu/FluentRead).
+
+[Quick Start](#quick-start) · [Features](#features) · [License](#license--attribution) · [简体中文](./misc/README_ZH.md)
+
+</div>
+
+My Translate displays translations alongside the original webpage and provides selection translation, input translation, and bilingual page display. Built on FluentRead with free translation engines that require no API keys.
 
 ## Quick Start
 
@@ -36,7 +44,7 @@ Open `test.html` in your browser and select any text to see the translation popu
 ## Features
 
 - 📄 **Web Page Translation**: Bilingual page display
-- ✏️ **Selection Translation**: Translate selected text (划词翻译)
+- ✏️ **Selection Translation** (划词翻译): Translate selected text
 - 🔤 **Input Translation**: Type or paste text to translate
 - 🌐 **Chinese ↔ English**: Bidirectional translation
 - 🆓 **Free Engines**: Microsoft, Google, DeepLX (no API key required)
@@ -56,4 +64,4 @@ Thanks to the FluentRead project and its contributors for creating this excellen
 
 ---
 
-**Complete documentation in Chinese**: [README.zh-CN.md](./README.zh-CN.md)
+**Complete documentation in Chinese**: [简体中文文档](./README.zh-CN.md)
