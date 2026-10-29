@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Translate - 测试页面 / Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.8;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        h2 {
+            color: #764ba2;
+            margin-top: 40px;
+            font-size: 1.8em;
+            border-left: 4px solid #764ba2;
+            padding-left: 15px;
+        }
+        p {
+            font-size: 1.1em;
+            margin: 20px 0;
+            text-align: justify;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        .instructions {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .instructions h3 {
+            color: #155724;
+            margin-top: 0;
+        }
+        ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 10px 0;
+            font-size: 1.05em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 My Translate 测试页面</h1>
+        
+        <div class="instructions">
+            <h3>📋 使用说明 / Instructions</h3>
+            <ul>
+                <li><strong>划词翻译</strong>：用鼠标选中下方的任意中文或英文文本，等待翻译浮窗出现</li>
+                <li><strong>Selection Translation</strong>: Select any Chinese or English text below with your mouse and wait for the translation popup</li>
+                <li><strong>复制译文</strong>：点击翻译浮窗中的复制按钮，将译文复制到剪贴板</li>
+                <li><strong>Copy Translation</strong>: Click the copy button in the translation popup to copy the translated text to clipboard</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🇨🇳 中文示例段落</h2>
+            <p>
+                人工智能技术正在深刻改变着我们的生活方式。从<span class="highlight">智能手机</span>到<span class="highlight">自动驾驶汽车</span>，从<span class="highlight">语音助手</span>到<span class="highlight">机器翻译</span>，AI技术已经渗透到我们日常生活的方方面面。
+            </p>
+            <p>
+                机器翻译作为人工智能的重要应用之一，正在打破语言障碍，促进全球文化交流。现代的神经网络翻译系统能够理解上下文，提供更加准确和自然的翻译结果。这不仅使得跨语言沟通变得更加便捷，也为知识的传播和文化的交融创造了新的可能。
+            </p>
+            <p>
+                随着技术的不断进步，我们可以期待看到更加智能、更加人性化的翻译工具出现。这些工具将帮助人们更好地理解不同文化，促进全球范围内的合作与创新。语言不再是障碍，而是连接世界的桥梁。
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>🇬🇧 English Example Paragraph</h2>
+            <p>
+                <span class="highlight">Open source software</span> has revolutionized the way we develop and share technology. By making source code freely available, open source projects enable <span class="highlight">collaboration</span> on a global scale. Developers from different countries and backgrounds can contribute their expertise, creating robust and innovative solutions that benefit everyone.
+            </p>
+            <p>
+                The open source movement is built on the principles of <span class="highlight">transparency</span>, <span class="highlight">community</span>, and <span class="highlight">shared knowledge</span>. Projects like Linux, Python, and countless others have demonstrated that collective effort can produce software that rivals or exceeds proprietary alternatives. This collaborative approach not only accelerates innovation but also ensures that technology remains accessible to all.
+            </p>
+            <p>
+                Translation tools play a crucial role in the open source ecosystem by breaking down language barriers. When documentation and discussions are available in multiple languages, more people can participate in and benefit from open source projects. This linguistic accessibility is essential for creating truly global communities that harness diverse perspectives and talents.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>🌏 关于本项目 / About This Project</h2>
+            <p>
+                <strong>My Translate</strong> 是一个基于 <code>FluentRead</code> 开发的开源浏览器翻译扩展。它继承了 FluentRead 的强大功能，支持<span class="highlight">网页翻译</span>、<span class="highlight">划词翻译</span>、<span class="highlight">输入翻译</span>等多种翻译模式。
+            </p>
+            <p>
+                This project is an open-source browser translation extension based on <code>FluentRead</code>. It inherits the powerful features of FluentRead, supporting multiple translation modes including <span class="highlight">web page translation</span>, <span class="highlight">selection translation</span>, and <span class="highlight">input translation</span>.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>✨ 主要特性 / Key Features</h2>
+            <ul>
+                <li><strong>免费翻译引擎</strong>：支持 Microsoft Translator、Google Translate、DeepLX 等免费服务，无需 API Key</li>
+                <li><strong>Free Translation Engines</strong>: Supports Microsoft Translator, Google Translate, DeepLX and other free services, no API Key required</li>
+                <li><strong>划词即译</strong>：选中文本即可获得翻译结果，操作简单快捷</li>
+                <li><strong>Instant Translation</strong>: Get translation results by selecting text, simple and fast</li>
+                <li><strong>双语对照</strong>：网页翻译模式下可同时显示原文和译文，方便对照阅读</li>
+                <li><strong>Bilingual Display</strong>: Shows both original and translated text in web page translation mode for easy comparison</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🧪 测试建议 / Testing Suggestions</h2>
+            <p>请尝试选中以下不同类型的文本来测试翻译功能：</p>
+            <p>Please try selecting the following different types of text to test the translation function:</p>
+            <ul>
+                <li>短句：<span class="highlight">你好，世界！</span> / <span class="highlight">Hello, World!</span></li>
+                <li>技术术语：<span class="highlight">人工智能</span> / <span class="highlight">Artificial Intelligence</span></li>
+                <li>长段落：选择上面的任意完整段落 / Select any complete paragraph above</li>
+                <li>混合内容：包含英文的中文句子或包含中文的英文句子</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>
+                🌟 My Translate - Based on FluentRead (GPL-3.0)<br>
+                📝 Test Page for Translation Extension Development<br>
+                🔗 <a href="https://github.com/Bistutu/FluentRead" target="_blank" style="color: #667eea;">FluentRead Original Project</a>
+            </p>
+            <p style="margin-top: 20px; font-size: 0.9em;">
+                此测试页面包含中英文混合内容，用于验证翻译扩展的各项功能<br>
+                This test page contains mixed Chinese and English content to verify various translation extension features
+            </p>
+        </div>
+    </div>
+</body>
+</html>
