@@ -1,0 +1,9 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "allowArbitraryExtensions": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "exclude": ["node_modules", ".output", "storybook", ".storybook"]
+}
