@@ -1,11 +1,128 @@
 /**
  * @file desktop/src/shared/translation.ts
- * 文件职责：桌面应用翻译服务适配层，复用浏览器扩展的免费翻译引擎。
- * 主要内容：翻译请求封装、语言检测、结果处理；使用 Microsoft Edge、Google Free 等免费服务。
- * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；严格按扩展实现的协议端点。
+ * 文件职责：桌面应用翻译服务适配层，复用浏览器扩展的免费翻译引擎和离线词典。
+ * 主要内容：翻译请求封装、语言检测、在线翻译（Microsoft Edge、Google）、离线词典查询。
+ * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；离线词典使用 CC-CEDICT (CC-BY-SA 4.0)。
  */
 
 import type { TranslationRequest, TranslationResult } from './types';
+import offlineDict from './offline-dict.json';
+
+/**
+ * 离线词典缓存
+ */
+const dictCache = {
+  zh2en: new Map<string, any>(),
+  en2zh: new Map<string, any[]>(),
+  loaded: false
+};
+
+/**
+ * 加载离线词典到内存
+ */
+function loadOfflineDict() {
+  if (dictCache.loaded) {
+    return;
+  }
+  
+  console.log('[Dict] Loading offline dictionary...');
+  
+  // Load Chinese to English
+  for (const [key, value] of Object.entries(offlineDict.zh2en)) {
+    dictCache.zh2en.set(key, value);
+  }
+  
+  // Load English to Chinese
+  for (const [key, value] of Object.entries(offlineDict.en2zh)) {
+    dictCache.en2zh.set(key, value as any[]);
+  }
+  
+  dictCache.loaded = true;
+  console.log(`[Dict] Loaded ${dictCache.zh2en.size} Chinese entries, ${dictCache.en2zh.size} English words`);
+}
+
+/**
+ * 检测文本是否为单个词（适合词典查询）
+ */
+function isSingleWord(text: string): boolean {
+  const trimmed = text.trim();
+  
+  // English: single word (no spaces, only letters/hyphens)
+  if (/^[a-zA-Z][-a-zA-Z]*$/.test(trimmed)) {
+    return true;
+  }
+  
+  // Chinese: 1-4 characters (most dictionary headwords)
+  if (/^[\u4e00-\u9fa5]{1,4}$/.test(trimmed)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * 离线词典查询
+ */
+function offlineLookup(text: string, targetLang: string): string | null {
+  loadOfflineDict();
+  
+  const trimmed = text.trim();
+  const lowerText = trimmed.toLowerCase();
+  
+  // Try Chinese lookup
+  if (/[\u4e00-\u9fa5]/.test(trimmed)) {
+    const entry = dictCache.zh2en.get(trimmed);
+    if (entry) {
+      const result: string[] = [];
+      
+      // Format: traditional (simplified) [pinyin]
+      if (entry.t === entry.s) {
+        result.push(`${entry.t} [${entry.p}]`);
+      } else {
+        result.push(`${entry.t} (${entry.s}) [${entry.p}]`);
+      }
+      
+      // Definitions
+      result.push('');
+      entry.d.forEach((def: string, idx: number) => {
+        result.push(`${idx + 1}. ${def}`);
+      });
+      
+      console.log('[Dict] Found Chinese entry:', trimmed);
+      return result.join('\n');
+    }
+  }
+  
+  // Try English lookup
+  if (/^[a-zA-Z]/.test(trimmed)) {
+    const entries = dictCache.en2zh.get(lowerText);
+    if (entries && entries.length > 0) {
+      const result: string[] = [];
+      result.push(`${trimmed}:`);
+      result.push('');
+      
+      // Show top 3 matches
+      entries.slice(0, 3).forEach((entry: any, idx: number) => {
+        if (entry.t === entry.s) {
+          result.push(`${idx + 1}. ${entry.s} [${entry.p}]`);
+        } else {
+          result.push(`${idx + 1}. ${entry.t} (${entry.s}) [${entry.p}]`);
+        }
+        // Show first definition
+        if (entry.d && entry.d.length > 0) {
+          result.push(`   ${entry.d[0]}`);
+        }
+        result.push('');
+      });
+      
+      console.log('[Dict] Found English entry:', lowerText);
+      return result.join('\n').trim();
+    }
+  }
+  
+  return null;
+}
+
 
 /**
  * HTML 转义（Microsoft 需要）
@@ -148,8 +265,8 @@ async function translateWithGoogle(
 }
 
 /**
- * 简化的翻译函数，使用可靠的免费引擎
- * 优先使用 Microsoft Edge，失败时降级到 Google
+ * 简化的翻译函数，优先使用离线词典（单词），否则使用在线翻译
+ * 在线翻译优先使用 Microsoft Edge，失败时降级到 Google
  */
 export async function translateText(request: TranslationRequest): Promise<TranslationResult> {
   const { text, sourceLanguage = 'auto', targetLanguage = 'zh-Hans' } = request;
@@ -160,6 +277,22 @@ export async function translateText(request: TranslationRequest): Promise<Transl
       sourceLanguage,
       targetLanguage
     };
+  }
+
+  // Try offline dictionary first for single words
+  if (isSingleWord(text)) {
+    console.log('[Translation] Trying offline dictionary for single word...');
+    const offlineResult = offlineLookup(text, targetLanguage);
+    if (offlineResult) {
+      console.log('[Translation] Offline dictionary hit');
+      return {
+        text: offlineResult,
+        sourceLanguage: sourceLanguage === 'auto' ? detectLanguage(text) : sourceLanguage,
+        targetLanguage,
+        source: '离线词库'
+      };
+    }
+    console.log('[Translation] No offline match, falling back to online...');
   }
 
   // Try Microsoft Edge first (most reliable)
@@ -187,6 +320,20 @@ export async function translateText(request: TranslationRequest): Promise<Transl
       };
     } catch (googleError) {
       console.error('[Translation] Google failed:', googleError);
+      
+      // Last resort: try offline dictionary even for non-single-word text
+      console.log('[Translation] All online services failed, trying offline as last resort...');
+      const offlineResult = offlineLookup(text, targetLanguage);
+      if (offlineResult) {
+        console.log('[Translation] Offline fallback successful');
+        return {
+          text: offlineResult + '\n\n(离线模式)',
+          sourceLanguage: sourceLanguage === 'auto' ? detectLanguage(text) : sourceLanguage,
+          targetLanguage,
+          source: '离线词库'
+        };
+      }
+      
       throw new Error('所有翻译服务均不可用。请检查网络连接。');
     }
   }

@@ -15,6 +15,7 @@ export interface TranslationResult {
   text: string;
   sourceLanguage: string;
   targetLanguage: string;
+  source?: string; // e.g. '离线词库', 'Microsoft Edge', 'Google Translate'
 }
 
 export interface OCRRequest {
