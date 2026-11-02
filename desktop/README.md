@@ -88,24 +88,44 @@ pnpm dev
 - 支持热模块替换（HMR）
 - 自动打开开发者工具
 
-### 生产构建
+### 生产构建与打包
 
 ```bash
-# 构建应用（编译 TypeScript 和 Vue）
+# 1. 构建应用（编译 TypeScript、Vue 和渲染器资源）
+cd desktop
 pnpm build
 
-# 打包成可执行文件
+# 2. 打包成 Windows 可执行安装程序
 pnpm package
+
+# 输出路径: desktop/release/My Translate-0.1.0-win-x64.exe
+```
+
+构建流程说明：
+1. `pnpm build` 执行以下步骤：
+   - 编译主进程代码 → `dist/main/index.js`
+   - 编译预加载脚本 → `dist/preload/index.js`
+   - 构建渲染器页面 → `dist/renderer/*.html`（包含 index.html、translation.html、ocr.html）
+2. `pnpm package` 使用 electron-builder 打包：
+   - 将 `dist/` 目录打包成 asar 归档
+   - 创建 Windows 安装程序（NSIS）
+   - 包含 Electron 运行时和 Node 模块
+
+**重新构建**：修改代码后，按顺序执行：
+```bash
+cd desktop
+pnpm build && pnpm package
 ```
 
 构建产物位置：
 - **编译后的代码**: `desktop/dist/`
-  - `dist/main/` - 主进程代码
-  - `dist/preload/` - 预加载脚本
-  - `dist/renderer/` - 渲染进程代码
+  - `dist/main/` - 主进程代码 (index.js)
+  - `dist/preload/` - 预加载脚本 (index.js)
+  - `dist/renderer/` - 渲染进程页面 (index.html、translation.html、ocr.html)
 - **可执行文件**: `desktop/release/`
-  - Windows: `My Translate Setup x.x.x.exe` (安装程序)
-  - Windows: `My Translate x.x.x.exe` (便携版)
+  - Windows: `My Translate-0.1.0-win-x64.exe` (NSIS 安装程序)
+
+**重要**: 打包后的应用使用 `app.isPackaged` 检测运行环境，自动加载本地 HTML 文件（非 localhost）。
 
 ### 直接运行（需先构建）
 

@@ -36,8 +36,8 @@ function createMainWindow() {
     autoHideMenuBar: true
   });
 
-  // 开发环境加载 Vite 开发服务器
-  if (process.env.NODE_ENV === 'development') {
+  // 开发环境加载 Vite 开发服务器，生产环境加载本地文件
+  if (!app.isPackaged) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
@@ -88,7 +88,7 @@ function createTranslationWindow(text: string, mode: 'selection' | 'ocr', x?: nu
   });
 
   // 加载翻译窗口页面
-  if (process.env.NODE_ENV === 'development') {
+  if (!app.isPackaged) {
     translationWindow.loadURL('http://localhost:5173/translation.html');
   } else {
     translationWindow.loadFile(join(__dirname, '../renderer/translation.html'));
@@ -159,7 +159,7 @@ async function createOCRWindow() {
       }
     });
 
-    if (process.env.NODE_ENV === 'development') {
+    if (!app.isPackaged) {
       ocrWindow.loadURL('http://localhost:5173/ocr.html');
     } else {
       ocrWindow.loadFile(join(__dirname, '../renderer/ocr.html'));
