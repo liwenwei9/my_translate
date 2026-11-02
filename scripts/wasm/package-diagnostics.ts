@@ -8,7 +8,8 @@ const OCR_CORE_SHA256 = '9d7c43fb206dc9f48475228b46bf35f888fa9e6259da2e67d5a75c7
 const OCR_WORKER_SHA256 = '38645599043239c0eb6db08a6504a92dcdc292200535f3e9339cd77c4443b842';
 
 function requirePinnedSource(source: string, digest: string, name: string): void {
-    if (createHash('sha256').update(source).digest('hex') !== digest) {
+    const normalized = source.replace(/\r\n/g, '\n');
+    if (createHash('sha256').update(normalized).digest('hex') !== digest) {
         throw new Error(`Unsupported ${name} source: review OCR packaging before upgrading`);
     }
 }
@@ -42,7 +43,8 @@ export function splitTesseractWasm(source: string): {code: string; wasm: Buffer}
 
 /** 把拆分出的二进制与诊断适配后的 glue 一起登记给 WXT，保持已有 corePath 不变。 */
 export function packageTesseractWasm(root: string, sourcePath: string): {glue: string; wasm: string} {
-    const source = fs.readFileSync(sourcePath, 'utf8');
+    let source = fs.readFileSync(sourcePath, 'utf8');
+    source = source.replace(/\r\n/g, '\n');
     requirePinnedSource(source, OCR_CORE_SHA256, 'tesseract.js-core 6.1.2');
     // FS.writeFile 已取得 stream 后，数据校验或写入失败仍必须 close；不改变编码、flags 或原生字节。
     const corrected = replaceOnce(source,
@@ -64,6 +66,7 @@ export function packageTesseractWasm(root: string, sourcePath: string): {glue: s
 /** 生成扩展实际加载的 worker，保留完整 vendor 和 LICENSE 说明，不修改原始锁定资源。 */
 export function packageTesseractWorker(root: string, sourcePath: string): string {
     let source = fs.readFileSync(sourcePath, 'utf8');
+    source = source.replace(/\r\n/g, '\n');
     requirePinnedSource(source, OCR_WORKER_SHA256, 'tesseract.js 6.0.1 worker');
     source = patchExtensionVendorSource('tesseract-worker', source);
     // 让 dispatch 的 Promise 错误出口观察到异步 Core 工厂失败，保留 worker/job 身份。
