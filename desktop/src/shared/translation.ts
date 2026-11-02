@@ -1,38 +1,77 @@
 /**
  * @file desktop/src/shared/translation.ts
  * 文件职责：桌面应用翻译服务适配层，复用浏览器扩展的免费翻译引擎。
- * 主要内容：翻译请求封装、语言检测、结果处理；使用 Microsoft、Google Free 等免费服务。
- * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；上层按接口调用，不关心具体 provider 实现。
+ * 主要内容：翻译请求封装、语言检测、结果处理；使用 Microsoft Edge、Google Free 等免费服务。
+ * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；严格按扩展实现的协议端点。
  */
 
 import type { TranslationRequest, TranslationResult } from './types';
 
 /**
- * Microsoft Translator 免费接口
- * 使用 Edge 网页接口，无需 API key
+ * HTML 转义（Microsoft 需要）
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * HTML 解码（Microsoft 响应）
+ */
+function decodeHtml(text: string): string {
+  return text
+    .replace(/&#(?:0*39);|&#x0*27;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&gt;/gi, '>')
+    .replace(/&lt;/gi, '<')
+    .replace(/&amp;/gi, '&');
+}
+
+/**
+ * 规范化中文语言代码
+ */
+function normalizeLanguageCode(code: string): string {
+  const normalized: Record<string, string> = {
+    'zh-Hans': 'zh-Hans',
+    'zh-Hant': 'zh-Hant',
+    'zh-CN': 'zh-Hans',
+    'zh-TW': 'zh-Hant',
+  };
+  return normalized[code] || code;
+}
+
+/**
+ * Microsoft Edge Translator 免费接口
+ * 端点: https://edge.microsoft.com/translate/translatetext
+ * 协议: 从 src/providers/translation/microsoftTransport.ts 移植
  */
 async function translateWithMicrosoft(
   text: string,
   source: string,
   target: string
 ): Promise<string> {
-  const fromLang = source === 'auto' ? '' : source;
-  const toLang = target;
+  const fromLang = normalizeLanguageCode(source);
+  const toLang = normalizeLanguageCode(target);
   
-  const url = 'https://api-edge.cognitive.microsofttranslator.com/translate';
-  const params = new URLSearchParams({
-    'api-version': '3.0',
-    'from': fromLang,
-    'to': toLang
-  });
+  const url = new URL('https://edge.microsoft.com/translate/translatetext');
+  url.searchParams.set('from', fromLang === 'auto' ? '' : fromLang);
+  url.searchParams.set('to', toLang);
+  url.searchParams.set('isEnterpriseClient', 'false');
 
-  const response = await fetch(`${url}?${params}`, {
+  // HTML-escape the text before sending
+  const escapedText = escapeHtml(text);
+
+  const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     },
-    body: JSON.stringify([{ Text: text }])
+    body: JSON.stringify([escapedText])
   });
 
   if (!response.ok) {
@@ -41,36 +80,57 @@ async function translateWithMicrosoft(
 
   const data = await response.json();
   
+  // Response format: [{translations: [{text: "..."}]}]
   if (!Array.isArray(data) || !data[0]?.translations?.[0]?.text) {
     throw new Error('Invalid Microsoft API response');
   }
 
-  return data[0].translations[0].text;
+  // HTML-decode the response
+  const translatedText = data[0].translations[0].text;
+  return decodeHtml(translatedText);
 }
 
 /**
  * Google Translate 免费接口
- * 使用公共 API 端点
+ * 端点: https://translate.googleapis.com/translate_a/t
+ * 协议: 从 src/providers/translation/google.ts 移植 (translateGoogleList)
  */
 async function translateWithGoogle(
   text: string,
   source: string,
   target: string
 ): Promise<string> {
-  // Use the translate_a/t endpoint that the extension uses
-  const url = 'https://translate.googleapis.com/translate_a/t';
-  const params = new URLSearchParams({
-    client: 'te_lib',
-    sl: source === 'auto' ? 'auto' : source,
-    tl: target,
-    q: text
-  });
+  const fromLang = normalizeLanguageCode(source);
+  const toLang = normalizeLanguageCode(target);
+  
+  // Map language codes for Google
+  const googleLang = (code: string) => {
+    const aliases: Record<string, string> = {
+      'zh-Hans': 'zh-CN',
+      'zh-Hant': 'zh-TW',
+      'nb': 'no',
+      'fil': 'tl'
+    };
+    return aliases[code] || code;
+  };
 
-  const response = await fetch(`${url}?${params}`, {
-    method: 'GET',
+  const url = new URL('https://translate.googleapis.com/translate_a/t');
+  url.searchParams.set('client', 'gtx');
+  url.searchParams.set('sl', fromLang === 'auto' ? 'auto' : googleLang(fromLang));
+  url.searchParams.set('tl', googleLang(toLang));
+  url.searchParams.set('dt', 't');
+
+  // Use URLSearchParams for proper form encoding
+  const body = new URLSearchParams();
+  body.append('q', text);
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
+    },
+    body: body.toString()
   });
 
   if (!response.ok) {
@@ -79,16 +139,17 @@ async function translateWithGoogle(
 
   const data = await response.json();
   
-  // Google translate_a/t returns array of translations
-  if (!Array.isArray(data) || !data[0]) {
+  // Response format: [[translation]]
+  if (!Array.isArray(data) || !Array.isArray(data[0]) || !data[0][0]) {
     throw new Error('Invalid Google API response');
   }
 
-  return Array.isArray(data[0]) ? data[0].join('') : String(data[0]);
+  return data[0][0];
 }
 
 /**
  * 简化的翻译函数，使用可靠的免费引擎
+ * 优先使用 Microsoft Edge，失败时降级到 Google
  */
 export async function translateText(request: TranslationRequest): Promise<TranslationResult> {
   const { text, sourceLanguage = 'auto', targetLanguage = 'zh-Hans' } = request;
@@ -101,9 +162,9 @@ export async function translateText(request: TranslationRequest): Promise<Transl
     };
   }
 
-  // Try Microsoft first (most reliable for desktop)
+  // Try Microsoft Edge first (most reliable)
   try {
-    console.log('[Translation] Using Microsoft Translator...');
+    console.log('[Translation] Using Microsoft Edge Translator...');
     const result = await translateWithMicrosoft(text, sourceLanguage, targetLanguage);
     console.log('[Translation] Microsoft success');
     return {

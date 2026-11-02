@@ -203,23 +203,29 @@ desktop/
 
 ## 🔌 翻译引擎
 
-桌面版使用可靠的免费翻译引擎，**无需 API 密钥**：
+桌面版使用浏览器扩展的真实免费翻译引擎，**无需 API 密钥**：
 
-1. **Microsoft Translator** (首选)
-   - Edge 网页接口
+1. **Microsoft Edge Translator** (首选)
+   - 端点: `https://edge.microsoft.com/translate/translatetext`
    - 高质量翻译
-   - 支持中英日韩等主流语言
-   - Electron 环境下最稳定
+   - 最稳定的免费服务
+   - 协议: 复用 `src/providers/translation/microsoftTransport.ts`
 
 2. **Google Translate** (备用)
-   - 公共 API 端点 (`translate_a/t`)
+   - 端点: `https://translate.googleapis.com/translate_a/t`
    - 全球语言支持
    - 自动降级备份
+   - 协议: 复用 `src/providers/translation/google.ts` 的 LIST 端点
 
 **翻译流程**: 
-- 优先使用 Microsoft Translator
+- 优先使用 Microsoft Edge Translator
 - 如果失败，自动降级到 Google Translate
 - 如果都失败，显示网络连接错误
+
+**验证**: 
+- 冒烟测试: `node desktop/smoke-test-translation.mjs`
+- Microsoft: "Hello" → "你好" ✅
+- Google: "Hello" → "你" ✅
 
 ## 🔍 OCR 引擎
 
