@@ -48,7 +48,11 @@ async function testOfflineDict() {
     }
     
     console.log('\n3. Testing English -> Chinese lookup:');
-    const testEnglish = ['hello', 'thank', 'sorry', 'love', 'good', 'world'];
+    const testEnglish = [
+      'hello', 'thank', 'please', 'sorry', 'love', 'good', 'world',
+      'morning', 'time', 'day', 'people', 'work', 'house', 'water',
+      'the', 'is', 'have', 'are', 'year', 'way'
+    ];
     let enSuccess = 0;
     for (const word of testEnglish) {
       const entries = offlineDict.en2zh[word];
@@ -72,6 +76,20 @@ async function testOfflineDict() {
       }
     }
     
+    console.log('\n4. Testing multi-word phrases:');
+    const testPhrases = ['thank you', 'good morning', 'good night', 'excuse me'];
+    let phraseSuccess = 0;
+    for (const phrase of testPhrases) {
+      const entries = offlineDict.phrases?.[phrase];
+      if (entries && entries.length > 0) {
+        const first = entries[0];
+        console.log(`   ✓ "${phrase}": ${first.s} [${first.p}] - ${first.d[0]}`);
+        phraseSuccess++;
+      } else {
+        console.log(`   ✗ "${phrase}": Not found`);
+      }
+    }
+    
     console.log('\n4. Verifying dictionary is bundled:');
     const fs = require('fs');
     const path = require('path');
@@ -81,6 +99,8 @@ async function testOfflineDict() {
       const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
       console.log(`   ✓ Dictionary file exists: ${path.relative(process.cwd(), dictPath)}`);
       console.log(`   ✓ Size: ${sizeMB} MB`);
+      console.log(`   ✓ English words: ${Object.keys(offlineDict.en2zh).length}`);
+      console.log(`   ✓ Multi-word phrases: ${offlineDict.phrases ? Object.keys(offlineDict.phrases).length : 0}`);
     } else {
       console.log(`   ✗ Dictionary file NOT found: ${dictPath}`);
       return false;
@@ -88,23 +108,28 @@ async function testOfflineDict() {
     
     console.log('\n5. Translation service integration:');
     console.log('   ✓ Single word detection: /^[a-zA-Z][-a-zA-Z]*$/ or /^[\\u4e00-\\u9fa5]{1,4}$/');
-    console.log('   ✓ Offline lookup priority: single words checked before online');
+    console.log('   ✓ Multi-word phrases: thank you, good morning, excuse me, etc.');
+    console.log('   ✓ Offline lookup priority: single words/phrases checked before online');
     console.log('   ✓ Fallback: online services fail -> try offline for any text');
     console.log('   ✓ Source label: "离线词库" shown in UI');
     
-    if (zhSuccess < 5 || enSuccess < 4) {
-      console.log('\n⚠️  WARNING: Some common words not found in dictionary');
-      console.log(`   Chinese: ${zhSuccess}/${testChinese.length} found`);
-      console.log(`   English: ${enSuccess}/${testEnglish.length} found`);
+    const minEnglish = 15; // At least 15 out of 20
+    const minPhrases = 3;  // At least 3 out of 4
+    
+    if (zhSuccess < 5 || enSuccess < minEnglish || phraseSuccess < minPhrases) {
+      console.log('\n⚠️  WARNING: Insufficient coverage');
+      console.log(`   Chinese: ${zhSuccess}/${testChinese.length} found (need 5+)`);
+      console.log(`   English: ${enSuccess}/${testEnglish.length} found (need ${minEnglish}+)`);
+      console.log(`   Phrases: ${phraseSuccess}/${testPhrases.length} found (need ${minPhrases}+)`);
     }
     
     console.log('\n✅ SUCCESS: Offline dictionary loaded and functional');
     console.log('   License: CC-BY-SA 4.0 (CC-CEDICT)');
     console.log('   URL: https://cc-cedict.org');
     console.log('   Mode: Bundled with app (no download required)');
-    console.log(`   Coverage: ${zhSuccess}/${testChinese.length} Chinese, ${enSuccess}/${testEnglish.length} English`);
+    console.log(`   Coverage: ${zhSuccess}/${testChinese.length} Chinese, ${enSuccess}/${testEnglish.length} English, ${phraseSuccess}/${testPhrases.length} phrases`);
     
-    return zhSuccess >= 5 && enSuccess >= 4;
+    return zhSuccess >= 5 && enSuccess >= minEnglish && phraseSuccess >= minPhrases;
   } catch (error) {
     console.error('\n❌ FAILED: Offline dictionary test failed');
     console.error('Error:', error.message);

@@ -14,6 +14,7 @@ import offlineDict from './offline-dict.json';
 const dictCache = {
   zh2en: new Map<string, any>(),
   en2zh: new Map<string, any[]>(),
+  phrases: new Map<string, any[]>(),
   loaded: false
 };
 
@@ -37,15 +38,33 @@ function loadOfflineDict() {
     dictCache.en2zh.set(key, value as any[]);
   }
   
+  // Load multi-word phrases
+  if (offlineDict.phrases) {
+    for (const [key, value] of Object.entries(offlineDict.phrases)) {
+      dictCache.phrases.set(key.toLowerCase(), value as any[]);
+    }
+  }
+  
   dictCache.loaded = true;
-  console.log(`[Dict] Loaded ${dictCache.zh2en.size} Chinese entries, ${dictCache.en2zh.size} English words`);
+  console.log(`[Dict] Loaded ${dictCache.zh2en.size} Chinese entries, ${dictCache.en2zh.size} English words, ${dictCache.phrases.size} phrases`);
 }
 
 /**
- * 检测文本是否为单个词（适合词典查询）
+ * 检测文本是否为单个词或常见短语（适合词典查询）
  */
 function isSingleWord(text: string): boolean {
-  const trimmed = text.trim();
+  const trimmed = text.trim().toLowerCase();
+  
+  // Check multi-word phrases first
+  const commonPhrases = [
+    'thank you', 'good morning', 'good afternoon', 'good evening', 'good night',
+    'excuse me', "you're welcome", 'you are welcome', 'how are you',
+    'see you', 'good bye', 'goodbye'
+  ];
+  
+  if (commonPhrases.includes(trimmed)) {
+    return true;
+  }
   
   // English: single word (no spaces, only letters/hyphens)
   if (/^[a-zA-Z][-a-zA-Z]*$/.test(trimmed)) {
@@ -68,6 +87,33 @@ function offlineLookup(text: string, targetLang: string): string | null {
   
   const trimmed = text.trim();
   const lowerText = trimmed.toLowerCase();
+  
+  // Check multi-word phrases first
+  if (dictCache.phrases.has(lowerText)) {
+    const entries = dictCache.phrases.get(lowerText);
+    if (entries && entries.length > 0) {
+      const result: string[] = [];
+      result.push(`${trimmed}:`);
+      result.push('');
+      
+      entries.forEach((entry: any, idx: number) => {
+        if (entry.t === entry.s) {
+          result.push(`${idx + 1}. ${entry.s} [${entry.p}]`);
+        } else {
+          result.push(`${idx + 1}. ${entry.t} (${entry.s}) [${entry.p}]`);
+        }
+        if (entry.d && entry.d.length > 0) {
+          result.push(`   ${entry.d[0]}`);
+        }
+        if (entries.length > 1) {
+          result.push('');
+        }
+      });
+      
+      console.log('[Dict] Found multi-word phrase:', lowerText);
+      return result.join('\n').trim();
+    }
+  }
   
   // Try Chinese lookup
   if (/[\u4e00-\u9fa5]/.test(trimmed)) {
