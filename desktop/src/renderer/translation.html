@@ -246,7 +246,8 @@
     });
 
     // 接收并翻译文本
-    window.electronAPI.onTranslationText(async (text) => {
+    window.electronAPI.onTranslationText(async (data) => {
+      const { text, mode } = data;
       sourceText = text;
       sourceTextDiv.textContent = text;
 
@@ -267,11 +268,17 @@
         // 显示结果
         loadingArea.style.display = 'none';
         resultArea.style.display = 'block';
+        
+        // OCR 模式显示置信度
+        if (mode === 'ocr') {
+          showStatus(`识别完成 (置信度: ${Math.round((result.confidence || 0) * 100) / 100}%)`, 'success');
+        }
       } catch (error) {
         console.error('Translation failed:', error);
         translatedTextDiv.textContent = '翻译失败: ' + error.message;
         loadingArea.style.display = 'none';
         resultArea.style.display = 'block';
+        showStatus('翻译失败', 'error');
       }
     });
 

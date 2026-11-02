@@ -13,11 +13,21 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.5);
       cursor: crosshair;
       overflow: hidden;
       width: 100vw;
       height: 100vh;
+    }
+
+    #background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: top left;
     }
 
     #canvas {
@@ -26,13 +36,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-    }
-
-    .selection-rect {
-      position: absolute;
-      border: 2px solid #667eea;
-      background: rgba(102, 126, 234, 0.1);
-      pointer-events: none;
+      cursor: crosshair;
     }
 
     .instructions {
@@ -110,9 +114,51 @@
     .control-panel .cancel-button:hover {
       background: #e0e0e0;
     }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .loading-content {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 16px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
+  <img id="background" alt="Screen capture">
+  
   <div class="instructions">
     <div class="instructions-icon">📸</div>
     <div class="instructions-text">
@@ -127,23 +173,47 @@
     <button class="cancel-button" id="cancelButton">取消</button>
   </div>
 
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">正在识别文字...</div>
+    </div>
+  </div>
+
   <script>
+    const backgroundImg = document.getElementById('background');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const controlPanel = document.getElementById('controlPanel');
     const confirmButton = document.getElementById('confirmButton');
     const cancelButton = document.getElementById('cancelButton');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
-    // 设置画布大小
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
+    let screenshotDataURL = null;
+    let screenshotImage = null;
+    
     let isDrawing = false;
     let startX = 0;
     let startY = 0;
     let endX = 0;
     let endY = 0;
     let selectedArea = null;
+
+    // 设置画布大小
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // 接收屏幕截图
+    window.electronAPI.onScreenCaptured((screenshot) => {
+      screenshotDataURL = screenshot;
+      backgroundImg.src = screenshot;
+      
+      // 预加载图像用于后续裁剪
+      screenshotImage = new Image();
+      screenshotImage.src = screenshot;
+      
+      console.log('[OCR] Screenshot received and loaded');
+    });
 
     // 鼠标按下
     canvas.addEventListener('mousedown', (e) => {
@@ -163,8 +233,8 @@
       // 清除画布
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 绘制暗色背景
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      // 绘制暗色遮罩
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // 计算选择区域
@@ -184,10 +254,11 @@
       // 绘制尺寸标签
       if (width > 50 && height > 30) {
         ctx.fillStyle = '#667eea';
-        ctx.fillRect(x, y - 24, Math.max(100, width), 24);
+        const labelWidth = Math.max(100, Math.min(width, 200));
+        ctx.fillRect(x, Math.max(0, y - 24), labelWidth, 24);
         ctx.fillStyle = 'white';
         ctx.font = '12px -apple-system, sans-serif';
-        ctx.fillText(`${Math.round(width)} × ${Math.round(height)}`, x + 8, y - 8);
+        ctx.fillText(`${Math.round(width)} × ${Math.round(height)}`, x + 8, Math.max(16, y - 8));
       }
     });
 
@@ -203,7 +274,7 @@
       const height = Math.abs(endY - startY);
 
       // 选择区域太小，忽略
-      if (width < 10 || height < 10) {
+      if (width < 20 || height < 20) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
       }
@@ -216,18 +287,25 @@
         height
       };
 
+      console.log('[OCR] Region selected:', selectedArea);
+
       // 显示控制面板
       controlPanel.style.display = 'flex';
     });
 
     // 确认识别
     confirmButton.addEventListener('click', async () => {
-      if (!selectedArea) return;
+      if (!selectedArea || !screenshotImage) {
+        console.error('[OCR] No region selected or screenshot not loaded');
+        return;
+      }
 
       try {
-        // 捕获选择区域
-        // TODO: 实现实际的屏幕捕获
-        // 使用 electron 的 desktopCapturer API
+        // 显示加载动画
+        loadingOverlay.style.display = 'flex';
+        controlPanel.style.display = 'none';
+
+        console.log('[OCR] Cropping region...');
         
         // 创建临时画布截取选中区域
         const tempCanvas = document.createElement('canvas');
@@ -235,28 +313,44 @@
         tempCanvas.height = selectedArea.height;
         const tempCtx = tempCanvas.getContext('2d');
         
-        // 注意：这里只能截取当前窗口内容，无法截取其他窗口
-        // 实际应用需要使用 desktopCapturer API
+        // 等待图像加载完成
+        await new Promise((resolve) => {
+          if (screenshotImage.complete) {
+            resolve();
+          } else {
+            screenshotImage.onload = resolve;
+          }
+        });
+
+        // 绘制裁剪后的图像
         tempCtx.drawImage(
-          canvas,
+          screenshotImage,
           selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height,
           0, 0, selectedArea.width, selectedArea.height
         );
 
-        const imageData = tempCanvas.toDataURL('image/png');
+        const croppedImageData = tempCanvas.toDataURL('image/png');
+        console.log('[OCR] Region cropped, starting recognition...');
 
-        // 执行 OCR
-        const result = await window.electronAPI.ocr({ imageData });
+        // 执行 OCR 并翻译
+        await window.electronAPI.ocrRegionSelected({
+          imageData: croppedImageData,
+          region: selectedArea
+        });
 
+        console.log('[OCR] Recognition complete, closing window...');
+        
         // 关闭 OCR 窗口
         await window.electronAPI.closeWindow();
-
-        // TODO: 显示 OCR 结果并翻译
-        console.log('OCR Result:', result);
         
       } catch (error) {
-        console.error('OCR failed:', error);
-        await window.electronAPI.closeWindow();
+        console.error('[OCR] Processing failed:', error);
+        loadingOverlay.style.display = 'none';
+        
+        alert('OCR 识别失败: ' + (error.message || '未知错误'));
+        
+        // 重新显示控制面板
+        controlPanel.style.display = 'flex';
       }
     });
 
@@ -270,6 +364,11 @@
       if (e.key === 'Escape') {
         await window.electronAPI.closeWindow();
       }
+    });
+
+    // 清理监听器
+    window.addEventListener('beforeunload', () => {
+      window.electronAPI.removeScreenCapturedListener();
     });
   </script>
 </body>

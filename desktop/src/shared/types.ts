@@ -23,6 +23,8 @@ export interface OCRRequest {
 
 export interface OCRResult {
   text: string;
+  confidence?: number;
+  language?: string;
 }
 
 export interface WindowConfig {

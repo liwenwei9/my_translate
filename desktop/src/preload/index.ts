@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('ocr', request);
   },
 
+  // OCR 区域选择完成
+  ocrRegionSelected: (data: { imageData: string; region: { x: number; y: number; width: number; height: number } }): Promise<OCRResult> => {
+    return ipcRenderer.invoke('ocr-region-selected', data);
+  },
+
   // 复制到剪贴板
   copyToClipboard: (text: string): Promise<boolean> => {
     return ipcRenderer.invoke('copy-to-clipboard', text);
@@ -35,24 +40,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('minimize-window');
   },
 
-  // 截图
-  captureScreen: (): Promise<string | null> => {
-    return ipcRenderer.invoke('capture-screen');
-  },
-
   // 自动切换语言
   autoSwitchLanguages: (text: string): Promise<{ source: string; target: string }> => {
     return ipcRenderer.invoke('auto-switch-languages', text);
   },
 
   // 接收翻译文本（用于划词翻译窗口）
-  onTranslationText: (callback: (text: string) => void) => {
-    ipcRenderer.on('translation-text', (_event, text) => callback(text));
+  onTranslationText: (callback: (data: { text: string; mode: 'selection' | 'ocr' }) => void) => {
+    ipcRenderer.on('translation-text', (_event, data) => callback(data));
+  },
+
+  // 接收屏幕截图（用于 OCR 窗口）
+  onScreenCaptured: (callback: (screenshot: string) => void) => {
+    ipcRenderer.on('screen-captured', (_event, screenshot) => callback(screenshot));
   },
 
   // 移除监听器
   removeTranslationTextListener: () => {
     ipcRenderer.removeAllListeners('translation-text');
+  },
+
+  removeScreenCapturedListener: () => {
+    ipcRenderer.removeAllListeners('screen-captured');
   }
 });
 
@@ -62,13 +71,15 @@ declare global {
     electronAPI: {
       translate: (request: TranslationRequest) => Promise<TranslationResult>;
       ocr: (request: OCRRequest) => Promise<OCRResult>;
+      ocrRegionSelected: (data: { imageData: string; region: { x: number; y: number; width: number; height: number } }) => Promise<OCRResult>;
       copyToClipboard: (text: string) => Promise<boolean>;
       closeWindow: () => Promise<void>;
       minimizeWindow: () => Promise<void>;
-      captureScreen: () => Promise<string | null>;
       autoSwitchLanguages: (text: string) => Promise<{ source: string; target: string }>;
-      onTranslationText: (callback: (text: string) => void) => void;
+      onTranslationText: (callback: (data: { text: string; mode: 'selection' | 'ocr' }) => void) => void;
+      onScreenCaptured: (callback: (screenshot: string) => void) => void;
       removeTranslationTextListener: () => void;
+      removeScreenCapturedListener: () => void;
     };
   }
 }

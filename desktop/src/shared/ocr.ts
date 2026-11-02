@@ -1,34 +1,102 @@
 /**
  * @file desktop/src/shared/ocr.ts
  * 文件职责：桌面应用 OCR 服务，支持截图文字识别。
- * 主要内容：Tesseract.js 集成，图像预处理，文字识别；考虑后续集成 PaddleOCR。
- * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行。
+ * 主要内容：Tesseract.js 集成，离线识别中英文文字，自动语言检测。
+ * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；使用本地 Tesseract WASM 引擎。
  */
 
 import type { OCRRequest, OCRResult } from './types';
+import { createWorker } from 'tesseract.js';
+
+let ocrWorker: Awaited<ReturnType<typeof createWorker>> | null = null;
+
+/**
+ * 初始化 OCR Worker
+ * 使用本地训练数据，支持中英文识别
+ */
+async function initOCRWorker() {
+  if (ocrWorker) {
+    return ocrWorker;
+  }
+
+  try {
+    // 创建 Tesseract worker
+    ocrWorker = await createWorker({
+      logger: (m) => {
+        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
+          console.log(`[OCR] ${m.status}: ${Math.round((m.progress || 0) * 100)}%`);
+        }
+      }
+    });
+
+    // 加载中英文训练数据
+    // 首次使用会自动下载，后续使用缓存
+    await ocrWorker.loadLanguage('eng+chi_sim');
+    await ocrWorker.initialize('eng+chi_sim');
+
+    console.log('[OCR] Worker initialized successfully');
+    return ocrWorker;
+  } catch (error) {
+    console.error('[OCR] Failed to initialize worker:', error);
+    ocrWorker = null;
+    throw error;
+  }
+}
 
 /**
  * OCR 识别函数
- * MVP 版本使用简化实现，实际应集成 Tesseract.js 或 PaddleOCR
+ * 使用 Tesseract.js 进行离线文字识别
  */
 export async function recognizeText(request: OCRRequest): Promise<OCRResult> {
   const { imageData } = request;
   
+  if (!imageData || !imageData.startsWith('data:image/')) {
+    throw new Error('无效的图像数据');
+  }
+
   try {
-    // TODO: 集成真实 OCR 引擎
-    // 由于 Tesseract.js 和 PaddleOCR 都需要较大的模型文件
-    // MVP 阶段先返回提示信息，待后续集成
+    console.log('[OCR] Starting text recognition...');
     
-    // 模拟 OCR 处理延迟
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 初始化 worker
+    const worker = await initOCRWorker();
     
-    // 返回提示信息
+    // 执行 OCR 识别
+    const { data } = await worker.recognize(imageData);
+    
+    // 提取识别的文本
+    const text = data.text.trim();
+    
+    console.log(`[OCR] Recognition complete. Confidence: ${data.confidence}%`);
+    console.log(`[OCR] Detected text: ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`);
+    
+    if (!text) {
+      throw new Error('未识别到文字，请确保图片清晰且包含文字内容');
+    }
+
     return {
-      text: '[OCR 功能正在开发中]\n\n当前 MVP 版本暂未集成完整的 OCR 引擎。\n完整版本将支持:\n- Tesseract.js (开源)\n- PaddleOCR (高精度中英文)\n\n请先使用划词翻译或独立翻译窗口功能。'
+      text,
+      confidence: data.confidence,
+      language: data.data?.language || 'unknown'
     };
   } catch (error) {
-    console.error('OCR recognition failed:', error);
-    throw new Error('OCR 识别失败');
+    console.error('[OCR] Recognition failed:', error);
+    throw new Error(`OCR 识别失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  }
+}
+
+/**
+ * 清理 OCR Worker 资源
+ */
+export async function terminateOCRWorker() {
+  if (ocrWorker) {
+    try {
+      await ocrWorker.terminate();
+      console.log('[OCR] Worker terminated');
+    } catch (error) {
+      console.error('[OCR] Failed to terminate worker:', error);
+    } finally {
+      ocrWorker = null;
+    }
   }
 }
 

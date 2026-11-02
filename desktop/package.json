@@ -11,11 +11,13 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron .",
-    "package": "electron-builder --win --config"
+    "package": "electron-builder --win --config",
+    "test:services": "node test-services.mjs"
   },
   "dependencies": {
     "electron-log": "^5.1.2",
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "tesseract.js": "^5.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
