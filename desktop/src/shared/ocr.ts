@@ -7,9 +7,44 @@
 
 import type { OCRRequest, OCRResult } from './types';
 import { createWorker } from 'tesseract.js';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 let ocrWorker: Awaited<ReturnType<typeof createWorker>> | null = null;
 let initializationPromise: Promise<Awaited<ReturnType<typeof createWorker>>> | null = null;
+
+/**
+ * Get the path to tesseract.js node_modules
+ * Works in both development and production Electron
+ */
+function getTesseractPaths() {
+  try {
+    // In Electron, __dirname is available
+    // Find tesseract.js in node_modules
+    // require.resolve('tesseract.js') gives us /path/to/node_modules/tesseract.js/src/index.js
+    const tesseractPath = require.resolve('tesseract.js');
+    
+    // Go up from /node_modules/tesseract.js/src/index.js to /node_modules/tesseract.js
+    const tesseractDir = dirname(dirname(tesseractPath));
+    
+    // Worker script path for Node.js environment
+    const workerPath = join(tesseractDir, 'src', 'worker-script', 'node', 'index.js');
+    
+    console.log('[OCR] Tesseract paths:');
+    console.log(`  Base: ${tesseractDir}`);
+    console.log(`  Worker: ${workerPath}`);
+    
+    return {
+      workerPath,
+      // Let Tesseract.js use default CDN for core and lang files
+      // They will be cached after first download
+    };
+  } catch (error) {
+    console.error('[OCR] Failed to resolve tesseract paths:', error);
+    // Return undefined to use defaults
+    return {};
+  }
+}
 
 /**
  * 初始化 OCR Worker
@@ -30,12 +65,11 @@ async function initOCRWorker() {
     try {
       console.log('[OCR] Initializing Tesseract worker...');
       
-      // 创建 Tesseract worker with explicit configuration for Electron
-      const worker = await createWorker(['eng', 'chi_sim'], 1, {
-        // Tesseract.js will use CDN for worker and language files
-        // In Electron, this works fine as we have internet access
-        // The cache will be in user data directory
-        logger: (m) => {
+      const paths = getTesseractPaths();
+      
+      // 创建 Tesseract worker with explicit paths for Electron
+      const workerOptions: any = {
+        logger: (m: any) => {
           if (m.status === 'loading tesseract core' || 
               m.status === 'initializing tesseract' || 
               m.status === 'loading language traineddata') {
@@ -45,10 +79,19 @@ async function initOCRWorker() {
             console.log('[OCR] Tesseract API initialized');
           }
         },
-        errorHandler: (err) => {
+        errorHandler: (err: any) => {
           console.error('[OCR] Tesseract error:', err);
         }
-      });
+      };
+      
+      // Add explicit workerPath for Electron Node.js environment
+      if (paths.workerPath) {
+        workerOptions.workerPath = paths.workerPath;
+      }
+      
+      console.log('[OCR] Creating worker with options:', workerOptions);
+      
+      const worker = await createWorker(['eng', 'chi_sim'], 1, workerOptions);
 
       console.log('[OCR] Worker initialized successfully');
       ocrWorker = worker;
@@ -113,7 +156,8 @@ export async function recognizeText(request: OCRRequest): Promise<OCRResult> {
     if (error instanceof Error && (
       error.message.includes('Failed to initialize') ||
       error.message.includes('timeout') ||
-      error.message.includes('loading')
+      error.message.includes('loading') ||
+      error.message.includes('Cannot find module')
     )) {
       ocrWorker = null;
       initializationPromise = null;
@@ -139,6 +183,7 @@ export async function terminateOCRWorker() {
     }
   }
 }
+
 
 
 /**
