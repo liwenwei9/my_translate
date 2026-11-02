@@ -274,10 +274,13 @@
             <textarea id="sourceText" placeholder="输入要翻译的文本..."></textarea>
           </div>
           
-          <div class="text-area-wrapper">
-            <div class="text-area-label">译文</div>
-            <textarea id="targetText" placeholder="翻译结果将显示在这里..." readonly></textarea>
+        <div class="text-area-wrapper">
+          <div class="text-area-label">
+            译文
+            <span id="translationSource" style="font-size: 11px; color: #999; margin-left: 8px;"></span>
           </div>
+          <textarea id="targetText" placeholder="翻译结果将显示在这里..." readonly></textarea>
+        </div>
         </div>
 
         <div class="button-group">
@@ -312,6 +315,7 @@
     const clearButton = document.getElementById('clearButton');
     const copyButton = document.getElementById('copyButton');
     const statusMessage = document.getElementById('statusMessage');
+    const translationSource = document.getElementById('translationSource');
 
     // 显示状态消息
     function showStatus(message, type = 'success') {
@@ -344,11 +348,21 @@
         });
 
         targetTextArea.value = result.text;
+        
+        // Show translation source
+        if (result.source) {
+          translationSource.textContent = `(${result.source})`;
+          translationSource.style.color = result.source === '离线词库' ? '#28a745' : '#999';
+        } else {
+          translationSource.textContent = '';
+        }
+        
         showStatus('翻译完成！');
       } catch (error) {
         console.error('Translation failed:', error);
+        translationSource.textContent = '';
         showStatus('翻译失败: ' + error.message, 'error');
-        targetTextArea.value = '翻译失败，请稍后重试';
+        targetTextArea.value = error.message || '翻译失败，请稍后重试';
       } finally {
         translateButton.disabled = false;
         translateButton.textContent = '翻译';
@@ -376,6 +390,7 @@
     function clearText() {
       sourceTextArea.value = '';
       targetTextArea.value = '';
+      translationSource.textContent = '';
       statusMessage.textContent = '';
       statusMessage.className = '';
     }

@@ -27,20 +27,28 @@ async function testOfflineDict() {
     console.log(`   English words: ${Object.keys(offlineDict.en2zh).length}`);
     
     console.log('\n2. Testing Chinese -> English lookup:');
-    const testChinese = ['你', '好', '谢谢', '对不起', '爱'];
+    const testChinese = ['你', '好', '你好', '谢谢', '对不起', '再见', '爱'];
     let zhSuccess = 0;
     for (const word of testChinese) {
       const entry = offlineDict.zh2en[word];
       if (entry) {
         console.log(`   ✓ "${word}": ${entry.p} - ${entry.d[0]}`);
         zhSuccess++;
+        
+        // Verify critical words have proper definitions
+        if (word === '你好') {
+          const hasGreeting = entry.d.some(d => /hello|hi|greet/i.test(d));
+          if (!hasGreeting) {
+            console.log(`      ⚠️  Warning: 你好 doesn't have greeting definition`);
+          }
+        }
       } else {
         console.log(`   ✗ "${word}": Not found`);
       }
     }
     
     console.log('\n3. Testing English -> Chinese lookup:');
-    const testEnglish = ['hello', 'thank', 'sorry', 'love', 'good'];
+    const testEnglish = ['hello', 'thank', 'sorry', 'love', 'good', 'world'];
     let enSuccess = 0;
     for (const word of testEnglish) {
       const entries = offlineDict.en2zh[word];
@@ -48,6 +56,17 @@ async function testOfflineDict() {
         const first = entries[0];
         console.log(`   ✓ "${word}": ${first.s} [${first.p}] - ${first.d[0]}`);
         enSuccess++;
+        
+        // Verify "hello" returns greeting-oriented Chinese
+        if (word === 'hello') {
+          const isGreetingOriented = /你好|喂|哈喽/i.test(first.s) || /hello|hi|greet/i.test(first.d[0]);
+          const isHelloKitty = /kitty|凯蒂猫/i.test(first.s) || /kitty/i.test(first.d[0]);
+          if (isHelloKitty) {
+            console.log(`      ⚠️  Warning: "hello" returns Hello Kitty (not greeting)`);
+          } else if (isGreetingOriented) {
+            console.log(`      ✓ Good: "hello" returns greeting-oriented result`);
+          }
+        }
       } else {
         console.log(`   ✗ "${word}": Not found`);
       }
@@ -73,7 +92,7 @@ async function testOfflineDict() {
     console.log('   ✓ Fallback: online services fail -> try offline for any text');
     console.log('   ✓ Source label: "离线词库" shown in UI');
     
-    if (zhSuccess < 3 || enSuccess < 3) {
+    if (zhSuccess < 5 || enSuccess < 4) {
       console.log('\n⚠️  WARNING: Some common words not found in dictionary');
       console.log(`   Chinese: ${zhSuccess}/${testChinese.length} found`);
       console.log(`   English: ${enSuccess}/${testEnglish.length} found`);
@@ -85,7 +104,7 @@ async function testOfflineDict() {
     console.log('   Mode: Bundled with app (no download required)');
     console.log(`   Coverage: ${zhSuccess}/${testChinese.length} Chinese, ${enSuccess}/${testEnglish.length} English`);
     
-    return true;
+    return zhSuccess >= 5 && enSuccess >= 4;
   } catch (error) {
     console.error('\n❌ FAILED: Offline dictionary test failed');
     console.error('Error:', error.message);

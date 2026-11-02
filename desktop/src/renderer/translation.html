@@ -183,7 +183,10 @@
         </div>
 
         <div class="text-section">
-          <div class="section-label">译文</div>
+          <div class="section-label">
+            译文
+            <span id="translationSource" style="font-size: 11px; color: #999; margin-left: 6px;"></span>
+          </div>
           <div class="text-content" id="translatedText"></div>
         </div>
 
@@ -203,6 +206,7 @@
     const resultArea = document.getElementById('resultArea');
     const sourceTextDiv = document.getElementById('sourceText');
     const translatedTextDiv = document.getElementById('translatedText');
+    const translationSource = document.getElementById('translationSource');
     const copyButton = document.getElementById('copyButton');
     const copySourceButton = document.getElementById('copySourceButton');
     const statusDiv = document.getElementById('status');
@@ -265,6 +269,14 @@
         translatedText = result.text;
         translatedTextDiv.textContent = result.text;
 
+        // Show translation source
+        if (result.source) {
+          translationSource.textContent = `(${result.source})`;
+          translationSource.style.color = result.source === '离线词库' ? '#28a745' : '#999';
+        } else {
+          translationSource.textContent = '';
+        }
+
         // 显示结果
         loadingArea.style.display = 'none';
         resultArea.style.display = 'block';
@@ -275,7 +287,8 @@
         }
       } catch (error) {
         console.error('Translation failed:', error);
-        translatedTextDiv.textContent = '翻译失败: ' + error.message;
+        translatedTextDiv.textContent = error.message || '翻译失败';
+        translationSource.textContent = '';
         loadingArea.style.display = 'none';
         resultArea.style.display = 'block';
         showStatus('翻译失败', 'error');

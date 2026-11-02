@@ -303,7 +303,8 @@ export async function translateText(request: TranslationRequest): Promise<Transl
     return {
       text: result,
       sourceLanguage,
-      targetLanguage
+      targetLanguage,
+      source: 'Microsoft Edge'
     };
   } catch (error) {
     console.error('[Translation] Microsoft failed:', error);
@@ -316,7 +317,8 @@ export async function translateText(request: TranslationRequest): Promise<Transl
       return {
         text: result,
         sourceLanguage,
-        targetLanguage
+        targetLanguage,
+        source: 'Google Translate'
       };
     } catch (googleError) {
       console.error('[Translation] Google failed:', googleError);
@@ -334,7 +336,12 @@ export async function translateText(request: TranslationRequest): Promise<Transl
         };
       }
       
-      throw new Error('所有翻译服务均不可用。请检查网络连接。');
+      // If it's not a single word and offline failed, show user-friendly message
+      if (!isSingleWord(text)) {
+        throw new Error('整句翻译需要联网。当前离线词典仅支持单词查询。\n\n请检查网络连接后重试。');
+      }
+      
+      throw new Error('翻译失败：无法连接在线翻译服务，且离线词典未找到该词条。\n\n请检查网络连接或尝试其他词汇。');
     }
   }
 }
