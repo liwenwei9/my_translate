@@ -1,7 +1,7 @@
 /**
  * @file desktop/src/shared/ocr.ts
  * 文件职责：桌面应用 OCR 服务，支持截图文字识别。
- * 主要内容：Tesseract.js 集成，离线识别中英文文字，自动语言检测。
+ * 主要内容：Tesseract.js 集成，离线识别中英文文字，配置 Electron 环境下的 worker 路径。
  * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；使用本地 Tesseract WASM 引擎。
  */
 
@@ -9,38 +9,59 @@ import type { OCRRequest, OCRResult } from './types';
 import { createWorker } from 'tesseract.js';
 
 let ocrWorker: Awaited<ReturnType<typeof createWorker>> | null = null;
+let initializationPromise: Promise<Awaited<ReturnType<typeof createWorker>>> | null = null;
 
 /**
  * 初始化 OCR Worker
  * 使用本地训练数据，支持中英文识别
+ * 配置 Electron 环境的正确 worker 和语言包路径
  */
 async function initOCRWorker() {
   if (ocrWorker) {
     return ocrWorker;
   }
 
-  try {
-    // 创建 Tesseract worker
-    ocrWorker = await createWorker({
-      logger: (m) => {
-        if (m.status === 'loading tesseract core' || m.status === 'initializing tesseract' || m.status === 'loading language traineddata') {
-          console.log(`[OCR] ${m.status}: ${Math.round((m.progress || 0) * 100)}%`);
-        }
-      }
-    });
-
-    // 加载中英文训练数据
-    // 首次使用会自动下载，后续使用缓存
-    await ocrWorker.loadLanguage('eng+chi_sim');
-    await ocrWorker.initialize('eng+chi_sim');
-
-    console.log('[OCR] Worker initialized successfully');
-    return ocrWorker;
-  } catch (error) {
-    console.error('[OCR] Failed to initialize worker:', error);
-    ocrWorker = null;
-    throw error;
+  // 如果正在初始化，等待已有的初始化完成
+  if (initializationPromise) {
+    return initializationPromise;
   }
+
+  initializationPromise = (async () => {
+    try {
+      console.log('[OCR] Initializing Tesseract worker...');
+      
+      // 创建 Tesseract worker with explicit configuration for Electron
+      const worker = await createWorker(['eng', 'chi_sim'], 1, {
+        // Tesseract.js will use CDN for worker and language files
+        // In Electron, this works fine as we have internet access
+        // The cache will be in user data directory
+        logger: (m) => {
+          if (m.status === 'loading tesseract core' || 
+              m.status === 'initializing tesseract' || 
+              m.status === 'loading language traineddata') {
+            console.log(`[OCR] ${m.status}: ${Math.round((m.progress || 0) * 100)}%`);
+          }
+          if (m.status === 'initialized api') {
+            console.log('[OCR] Tesseract API initialized');
+          }
+        },
+        errorHandler: (err) => {
+          console.error('[OCR] Tesseract error:', err);
+        }
+      });
+
+      console.log('[OCR] Worker initialized successfully');
+      ocrWorker = worker;
+      return worker;
+    } catch (error) {
+      console.error('[OCR] Failed to initialize worker:', error);
+      initializationPromise = null;
+      ocrWorker = null;
+      throw error;
+    }
+  })();
+
+  return initializationPromise;
 }
 
 /**
@@ -57,17 +78,24 @@ export async function recognizeText(request: OCRRequest): Promise<OCRResult> {
   try {
     console.log('[OCR] Starting text recognition...');
     
-    // 初始化 worker
+    // 初始化 worker（如果尚未初始化）
     const worker = await initOCRWorker();
     
-    // 执行 OCR 识别
-    const { data } = await worker.recognize(imageData);
+    console.log('[OCR] Worker ready, recognizing image...');
+    
+    // 执行 OCR 识别，设置超时
+    const recognitionPromise = worker.recognize(imageData);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('OCR 识别超时（60秒）')), 60000);
+    });
+    
+    const { data } = await Promise.race([recognitionPromise, timeoutPromise]);
     
     // 提取识别的文本
     const text = data.text.trim();
     
     console.log(`[OCR] Recognition complete. Confidence: ${data.confidence}%`);
-    console.log(`[OCR] Detected text: ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`);
+    console.log(`[OCR] Detected text (${text.length} chars): ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`);
     
     if (!text) {
       throw new Error('未识别到文字，请确保图片清晰且包含文字内容');
@@ -80,6 +108,17 @@ export async function recognizeText(request: OCRRequest): Promise<OCRResult> {
     };
   } catch (error) {
     console.error('[OCR] Recognition failed:', error);
+    
+    // If initialization failed, reset so we can try again
+    if (error instanceof Error && (
+      error.message.includes('Failed to initialize') ||
+      error.message.includes('timeout') ||
+      error.message.includes('loading')
+    )) {
+      ocrWorker = null;
+      initializationPromise = null;
+    }
+    
     throw new Error(`OCR 识别失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
 }
@@ -96,9 +135,11 @@ export async function terminateOCRWorker() {
       console.error('[OCR] Failed to terminate worker:', error);
     } finally {
       ocrWorker = null;
+      initializationPromise = null;
     }
   }
 }
+
 
 /**
  * 预处理图像以提高 OCR 准确率

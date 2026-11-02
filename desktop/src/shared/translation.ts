@@ -1,15 +1,94 @@
 /**
  * @file desktop/src/shared/translation.ts
  * 文件职责：桌面应用翻译服务适配层，复用浏览器扩展的免费翻译引擎。
- * 主要内容：翻译请求封装、语言检测、结果处理；使用 Bilibili Free、Google、Microsoft 等免费服务。
+ * 主要内容：翻译请求封装、语言检测、结果处理；使用 Microsoft、Google Free 等免费服务。
  * 模块边界：不依赖浏览器 API，纯 Node.js 环境下可执行；上层按接口调用，不关心具体 provider 实现。
  */
 
 import type { TranslationRequest, TranslationResult } from './types';
 
 /**
- * 简化的翻译函数，复用扩展的免费翻译逻辑
- * 桌面版使用 Node.js fetch，不依赖浏览器运行时
+ * Microsoft Translator 免费接口
+ * 使用 Edge 网页接口，无需 API key
+ */
+async function translateWithMicrosoft(
+  text: string,
+  source: string,
+  target: string
+): Promise<string> {
+  const fromLang = source === 'auto' ? '' : source;
+  const toLang = target;
+  
+  const url = 'https://api-edge.cognitive.microsofttranslator.com/translate';
+  const params = new URLSearchParams({
+    'api-version': '3.0',
+    'from': fromLang,
+    'to': toLang
+  });
+
+  const response = await fetch(`${url}?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    body: JSON.stringify([{ Text: text }])
+  });
+
+  if (!response.ok) {
+    throw new Error(`Microsoft API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  if (!Array.isArray(data) || !data[0]?.translations?.[0]?.text) {
+    throw new Error('Invalid Microsoft API response');
+  }
+
+  return data[0].translations[0].text;
+}
+
+/**
+ * Google Translate 免费接口
+ * 使用公共 API 端点
+ */
+async function translateWithGoogle(
+  text: string,
+  source: string,
+  target: string
+): Promise<string> {
+  // Use the translate_a/t endpoint that the extension uses
+  const url = 'https://translate.googleapis.com/translate_a/t';
+  const params = new URLSearchParams({
+    client: 'te_lib',
+    sl: source === 'auto' ? 'auto' : source,
+    tl: target,
+    q: text
+  });
+
+  const response = await fetch(`${url}?${params}`, {
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Google translate_a/t returns array of translations
+  if (!Array.isArray(data) || !data[0]) {
+    throw new Error('Invalid Google API response');
+  }
+
+  return Array.isArray(data[0]) ? data[0].join('') : String(data[0]);
+}
+
+/**
+ * 简化的翻译函数，使用可靠的免费引擎
  */
 export async function translateText(request: TranslationRequest): Promise<TranslationResult> {
   const { text, sourceLanguage = 'auto', targetLanguage = 'zh-Hans' } = request;
@@ -22,128 +101,34 @@ export async function translateText(request: TranslationRequest): Promise<Transl
     };
   }
 
+  // Try Microsoft first (most reliable for desktop)
   try {
-    // 尝试使用 Bilibili Free API (最稳定的免费服务之一)
-    const result = await translateWithBilibili(text, sourceLanguage, targetLanguage);
+    console.log('[Translation] Using Microsoft Translator...');
+    const result = await translateWithMicrosoft(text, sourceLanguage, targetLanguage);
+    console.log('[Translation] Microsoft success');
     return {
       text: result,
       sourceLanguage,
       targetLanguage
     };
   } catch (error) {
-    console.error('Bilibili translation failed:', error);
+    console.error('[Translation] Microsoft failed:', error);
     
-    // 降级到 Google Free API
+    // Fallback to Google
     try {
-      const result = await translateWithGoogleFree(text, sourceLanguage, targetLanguage);
+      console.log('[Translation] Falling back to Google Translate...');
+      const result = await translateWithGoogle(text, sourceLanguage, targetLanguage);
+      console.log('[Translation] Google success');
       return {
         text: result,
         sourceLanguage,
         targetLanguage
       };
     } catch (googleError) {
-      console.error('Google translation failed:', googleError);
-      throw new Error('所有翻译服务均不可用');
+      console.error('[Translation] Google failed:', googleError);
+      throw new Error('所有翻译服务均不可用。请检查网络连接。');
     }
   }
-}
-
-/**
- * Bilibili Free Translation API
- * 复用扩展中的实现逻辑
- */
-async function translateWithBilibili(
-  text: string,
-  source: string,
-  target: string
-): Promise<string> {
-  const BILIBILI_API = 'https://api.bilibili.com/x/v2/dm/translate';
-  
-  const sourceName = source === 'auto' ? '' : getLanguageName(source);
-  const targetName = getLanguageName(target);
-  
-  const response = await fetch('https://api.bilibili.tv/intl/gateway/web/v2/translate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
-    body: JSON.stringify({
-      text,
-      source: source === 'auto' ? '' : source,
-      target
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Bilibili API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (data.code !== 0 || !data.data?.translated) {
-    throw new Error('Bilibili translation failed');
-  }
-
-  return data.data.translated;
-}
-
-/**
- * Google Free Translation API  
- * 使用公共端点，无需 API key
- */
-async function translateWithGoogleFree(
-  text: string,
-  source: string,
-  target: string
-): Promise<string> {
-  const url = new URL('https://translate.googleapis.com/translate_a/single');
-  url.searchParams.set('client', 'gtx');
-  url.searchParams.set('sl', source === 'auto' ? 'auto' : source);
-  url.searchParams.set('tl', target);
-  url.searchParams.set('dt', 't');
-  url.searchParams.set('q', text);
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Google API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (!Array.isArray(data) || !Array.isArray(data[0])) {
-    throw new Error('Invalid Google API response');
-  }
-
-  // Google API 返回格式: [[[translated, original, null, null, position]]]
-  const translations = data[0]
-    .filter((item: any) => Array.isArray(item) && item[0])
-    .map((item: any) => item[0]);
-
-  return translations.join('');
-}
-
-/**
- * 获取语言显示名称
- */
-function getLanguageName(code: string): string {
-  const names: Record<string, string> = {
-    'zh-Hans': '简体中文',
-    'zh-Hant': '繁体中文',
-    'en': 'English',
-    'ja': '日本語',
-    'ko': '한국어',
-    'fr': 'Français',
-    'de': 'Deutsch',
-    'es': 'Español',
-    'ru': 'Русский'
-  };
-  return names[code] || code;
 }
 
 /**
