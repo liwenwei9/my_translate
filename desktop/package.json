@@ -1,0 +1,29 @@
+{
+  "name": "my-translate-desktop",
+  "version": "0.1.0",
+  "description": "My Translate Desktop - Windows translation tool with OCR",
+  "main": "dist/main/index.js",
+  "author": "My Translate Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron .",
+    "package": "electron-builder --win --config"
+  },
+  "dependencies": {
+    "electron-log": "^5.1.2",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.19",
+    "vue": "^3.5.13"
+  }
+}
